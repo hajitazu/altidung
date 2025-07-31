@@ -73,6 +73,12 @@
         .reset-button:hover {
             background-color: #c82333;
         }
+        .copy-button {
+            background-color: #007bff; /* Blue */
+        }
+        .copy-button:hover {
+            background-color: #0056b3; /* Darker Blue */
+        }
         .schedule-output p {
             margin: 5px 0;
             white-space: pre-wrap; /* Preserve line breaks from JS */
@@ -83,6 +89,11 @@
             margin-bottom: 5px;
             font-size: 1.1em;
             color: #0056b3;
+        }
+        #copyStatus {
+            margin-left: 10px;
+            color: #28a745;
+            font-weight: bold;
         }
         .note {
             margin-top: 20px;
@@ -147,10 +158,12 @@
 
         <div class="schedule-output">
             <h2>Jadwal Petugas Satgas Adab <span id="outputDate"></span></h2>
-            <p id="jagaDalamOutput"><strong>Jaga Dalam:</strong></p>
-            <p id="jagaLuarOutput"><strong>Jaga Luar:</strong></p>
-            <p id="tempatWudhuOutput"><strong>Tempat Wudhu:</strong></p>
-            <p id="tadarusOutput"><strong>Tadarus:</strong></p>
+            <p id="jagaDalamOutput"><strong>Jaga Dalam:</strong><br></p>
+            <p id="jagaLuarOutput"><strong>Jaga Luar:</strong><br></p>
+            <p id="tempatWudhuOutput"><strong>Tempat Wudhu:</strong><br></p>
+            <p id="tadarusOutput"><strong>Tadarus:</strong><br></p>
+            <button class="copy-button" onclick="copySchedule()">Copy Jadwal</button>
+            <span id="copyStatus"></span>
         </div>
 
         <hr>
@@ -238,13 +251,13 @@
                 jagaDalam.push(availableMaleNames.shift());
                 jagaDalam.push(availableMaleNames.shift());
             } else {
-                jagaDalam.push("Tidak cukup cowo"); // Placeholder if not enough
+                jagaDalam.push("(Tidak cukup cowo)"); // Placeholder if not enough
             }
             if (availableFemaleNames.length >= 2) {
                 jagaDalam.push(availableFemaleNames.shift());
                 jagaDalam.push(availableFemaleNames.shift());
             } else {
-                jagaDalam.push("Tidak cukup cewe"); // Placeholder if not enough
+                jagaDalam.push("(Tidak cukup cewe)"); // Placeholder if not enough
             }
 
             // Assign Jaga Luar (2 cowo, 2 cewe)
@@ -252,13 +265,13 @@
                 jagaLuar.push(availableMaleNames.shift());
                 jagaLuar.push(availableMaleNames.shift());
             } else {
-                jagaLuar.push("Tidak cukup cowo"); // Placeholder if not enough
+                jagaLuar.push("(Tidak cukup cowo)"); // Placeholder if not enough
             }
             if (availableFemaleNames.length >= 2) {
                 jagaLuar.push(availableFemaleNames.shift());
                 jagaLuar.push(availableFemaleNames.shift());
             } else {
-                jagaLuar.push("Tidak cukup cewe"); // Placeholder if not enough
+                jagaLuar.push("(Tidak cukup cewe)"); // Placeholder if not enough
             }
 
             // Assign Tempat Wudhu (2 cowo, 2 cewe)
@@ -266,20 +279,20 @@
                 tempatWudhu.push(availableMaleNames.shift());
                 tempatWudhu.push(availableMaleNames.shift());
             } else {
-                tempatWudhu.push("Tidak cukup cowo"); // Placeholder if not enough
+                tempatWudhu.push("(Tidak cukup cowo)"); // Placeholder if not enough
             }
             if (availableFemaleNames.length >= 2) {
                 tempatWudhu.push(availableFemaleNames.shift());
                 tempatWudhu.push(availableFemaleNames.shift());
             } else {
-                tempatWudhu.push("Tidak cukup cewe"); // Placeholder if not enough
+                tempatWudhu.push("(Tidak cukup cewe)"); // Placeholder if not enough
             }
             
             // Assign Tadarus (1 ngaji)
             if (availableRecitationNames.length >= 1) {
                 tadarus.push(availableRecitationNames.shift());
             } else {
-                tadarus.push("Tidak cukup petugas tadarus"); // Placeholder if not enough
+                tadarus.push("(Tidak cukup petugas tadarus)"); // Placeholder if not enough
             }
 
 
@@ -291,7 +304,7 @@
             document.getElementById('tadarusOutput').innerHTML = `<strong>Tadarus:</strong><br>${tadarus.join('<br>')}`;
 
             // Add assigned names to served list
-            const newlyServed = [...jagaDalam, ...jagaLuar, ...tempatWudhu, ...tadarus].filter(name => !name.startsWith('Tidak cukup'));
+            const newlyServed = [...jagaDalam, ...jagaLuar, ...tempatWudhu, ...tadarus].filter(name => !name.startsWith('(Tidak cukup'));
             addNewlyServedNames(newlyServed);
         }
 
@@ -327,6 +340,43 @@
                 loadServedNames();
                 document.getElementById('servedNames').value = ''; // Clear textarea as well
                 alert("Daftar 'Sudah Bertugas' telah direset.");
+            }
+        }
+
+        async function copySchedule() {
+            const outputDate = document.getElementById('outputDate').textContent;
+            const jagaDalam = document.getElementById('jagaDalamOutput').innerText.replace('Jaga Dalam:', 'Jaga Dalam :'); // Get raw text and adjust formatting
+            const jagaLuar = document.getElementById('jagaLuarOutput').innerText.replace('Jaga Luar:', 'Jaga Luar :');
+            const tempatWudhu = document.getElementById('tempatWudhuOutput').innerText.replace('Tempat Wudhu:', 'Tempat Wudhu :');
+            const tadarus = document.getElementById('tadarusOutput').innerText.replace('Tadarus:', 'Tadarus :');
+
+            const scheduleText = `Jadwal petugas satgas adab ${outputDate}
+
+${jagaDalam}
+
+${jagaLuar}
+
+${tempatWudhu}
+
+${tadarus}
+
+Note :
+Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas masing2`;
+
+            try {
+                await navigator.clipboard.writeText(scheduleText);
+                const statusSpan = document.getElementById('copyStatus');
+                statusSpan.textContent = 'Jadwal berhasil disalin!';
+                setTimeout(() => statusSpan.textContent = '', 3000); // Clear message after 3 seconds
+            } catch (err) {
+                console.error('Gagal menyalin jadwal: ', err);
+                const statusSpan = document.getElementById('copyStatus');
+                statusSpan.textContent = 'Gagal menyalin jadwal.';
+                statusSpan.style.color = 'red';
+                setTimeout(() => {
+                    statusSpan.textContent = '';
+                    statusSpan.style.color = '#28a745'; // Reset color
+                }, 3000);
             }
         }
 
