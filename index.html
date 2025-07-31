@@ -25,14 +25,14 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .input-section, .schedule-output, .served-list-section {
+        .input-section, .schedule-output, .served-list-section, .config-section {
             margin-bottom: 30px;
             padding: 15px;
             border: 1px solid #e0e0e0;
             border-radius: 5px;
             background-color: #fafafa;
         }
-        .input-section h2, .schedule-output h2, .served-list-section h2 {
+        .input-section h2, .schedule-output h2, .served-list-section h2, .config-section h2 {
             color: #007bff;
             border-bottom: 1px solid #ddd;
             padding-bottom: 10px;
@@ -52,7 +52,12 @@
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Include padding in width */
+            box-sizing: border-box;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
         }
         button {
             background-color: #28a745;
@@ -62,7 +67,6 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            margin-right: 10px;
         }
         button:hover {
             background-color: #218838;
@@ -74,21 +78,17 @@
             background-color: #c82333;
         }
         .copy-button {
-            background-color: #007bff; /* Blue */
+            background-color: #007bff;
         }
         .copy-button:hover {
-            background-color: #0056b3; /* Darker Blue */
+            background-color: #0056b3;
         }
-        .schedule-output p {
-            margin: 5px 0;
-            white-space: pre-wrap; /* Preserve line breaks from JS */
+        .config-button {
+            background-color: #ffc107;
+            color: black;
         }
-        .schedule-output strong {
-            display: block; /* New line for categories */
-            margin-top: 10px;
-            margin-bottom: 5px;
-            font-size: 1.1em;
-            color: #0056b3;
+        .config-button:hover {
+            background-color: #e0a800;
         }
         #copyStatus {
             margin-left: 10px;
@@ -103,12 +103,23 @@
             color: #664d03;
             font-style: italic;
         }
+        .schedule-output p {
+            margin: 5px 0;
+            white-space: pre-wrap;
+        }
+        .schedule-output strong {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+            color: #0056b3;
+        }
         .served-list ul {
             list-style-type: disc;
             margin-left: 20px;
             padding: 0;
             max-height: 200px;
-            overflow-y: auto; /* Scroll for long lists */
+            overflow-y: auto;
             border: 1px solid #eee;
             padding: 10px;
             background-color: #fff;
@@ -154,6 +165,16 @@
             <button class="reset-button" onclick="resetServedList()">Reset Daftar Sudah Bertugas</button>
         </div>
 
+        <div class="config-section">
+            <h2>Konfigurasi Nama</h2>
+            <div class="button-group">
+                <button class="config-button" onclick="saveConfig()">Simpan Config</button>
+                <button class="config-button" onclick="loadConfig()">Muat Config</button>
+                <button class="config-button reset-button" onclick="deleteConfig()">Hapus Config</button>
+            </div>
+            <p id="configStatus"></p>
+        </div>
+
         <hr>
 
         <div class="schedule-output">
@@ -186,10 +207,9 @@
         // Load served names from Local Storage on page load
         document.addEventListener('DOMContentLoaded', (event) => {
             loadServedNames();
-            // Set default date to today's date
             const today = new Date();
             const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const month = String(today.getMonth() + 1).padStart(2, '0');
             const day = String(today.getDate()).padStart(2, '0');
             document.getElementById('dutyDate').value = `${year}-${month}-${day}`;
         });
@@ -197,7 +217,7 @@
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+                [array[i], array[j]] = [array[j], array[i]];
             }
         }
 
@@ -205,7 +225,7 @@
             const dutyDateInput = document.getElementById('dutyDate').value;
             let formattedDate = '';
             if (dutyDateInput) {
-                const dateParts = dutyDateInput.split('-'); // YYYY-MM-DD
+                const dateParts = dutyDateInput.split('-');
                 formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
             }
 
@@ -215,28 +235,17 @@
 
             let servedNames = document.getElementById('servedNames').value.split('\n').map(name => name.trim().toLowerCase()).filter(name => name !== '');
             
-            // Get served names from Local Storage and combine with input
             const localServedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
-            servedNames = [...new Set([...servedNames, ...localServedNames.map(name => name.toLowerCase())])]; // Combine and remove duplicates
+            servedNames = [...new Set([...servedNames, ...localServedNames.map(name => name.toLowerCase())])];
 
-            // Filter out names that have already served
             const availableMaleNames = maleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
             const availableFemaleNames = femaleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
             const availableRecitationNames = recitationNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
 
-            // If not enough available names, reuse from those who have served (optional, can be adjusted)
-            // For simplicity, this example will just use available. If you want reuse, it'll be more complex.
-            if (availableMaleNames.length < 2) {
-                console.warn("Peringatan: Jumlah petugas laki-laki yang tersedia kurang dari 2. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
-            }
-            if (availableFemaleNames.length < 2) {
-                console.warn("Peringatan: Jumlah petugas perempuan yang tersedia kurang dari 2. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
-            }
-            if (availableRecitationNames.length < 1) {
-                 console.warn("Peringatan: Jumlah petugas tadarus yang tersedia kurang dari 1. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+            if (availableMaleNames.length < 2 || availableFemaleNames.length < 2 || availableRecitationNames.length < 1) {
+                alert("Peringatan: Jumlah petugas yang tersedia kurang dari yang dibutuhkan. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
             }
 
-            // Shuffle available names to randomize selection
             shuffleArray(availableMaleNames);
             shuffleArray(availableFemaleNames);
             shuffleArray(availableRecitationNames);
@@ -246,64 +255,57 @@
             let tempatWudhu = [];
             let tadarus = [];
 
-            // Assign Jaga Dalam (2 cowo, 2 cewe)
             if (availableMaleNames.length >= 2) {
                 jagaDalam.push(availableMaleNames.shift());
                 jagaDalam.push(availableMaleNames.shift());
             } else {
-                jagaDalam.push("(Tidak cukup cowo)"); // Placeholder if not enough
+                jagaDalam.push("(Tidak cukup cowo)");
             }
             if (availableFemaleNames.length >= 2) {
                 jagaDalam.push(availableFemaleNames.shift());
                 jagaDalam.push(availableFemaleNames.shift());
             } else {
-                jagaDalam.push("(Tidak cukup cewe)"); // Placeholder if not enough
+                jagaDalam.push("(Tidak cukup cewe)");
             }
 
-            // Assign Jaga Luar (2 cowo, 2 cewe)
             if (availableMaleNames.length >= 2) {
                 jagaLuar.push(availableMaleNames.shift());
                 jagaLuar.push(availableMaleNames.shift());
             } else {
-                jagaLuar.push("(Tidak cukup cowo)"); // Placeholder if not enough
+                jagaLuar.push("(Tidak cukup cowo)");
             }
             if (availableFemaleNames.length >= 2) {
                 jagaLuar.push(availableFemaleNames.shift());
                 jagaLuar.push(availableFemaleNames.shift());
             } else {
-                jagaLuar.push("(Tidak cukup cewe)"); // Placeholder if not enough
+                jagaLuar.push("(Tidak cukup cewe)");
             }
 
-            // Assign Tempat Wudhu (2 cowo, 2 cewe)
             if (availableMaleNames.length >= 2) {
                 tempatWudhu.push(availableMaleNames.shift());
                 tempatWudhu.push(availableMaleNames.shift());
             } else {
-                tempatWudhu.push("(Tidak cukup cowo)"); // Placeholder if not enough
+                tempatWudhu.push("(Tidak cukup cowo)");
             }
             if (availableFemaleNames.length >= 2) {
                 tempatWudhu.push(availableFemaleNames.shift());
                 tempatWudhu.push(availableFemaleNames.shift());
             } else {
-                tempatWudhu.push("(Tidak cukup cewe)"); // Placeholder if not enough
+                tempatWudhu.push("(Tidak cukup cewe)");
             }
             
-            // Assign Tadarus (1 ngaji)
             if (availableRecitationNames.length >= 1) {
                 tadarus.push(availableRecitationNames.shift());
             } else {
-                tadarus.push("(Tidak cukup petugas tadarus)"); // Placeholder if not enough
+                tadarus.push("(Tidak cukup petugas tadarus)");
             }
 
-
-            // Update output
             document.getElementById('outputDate').textContent = `(${formattedDate})`;
             document.getElementById('jagaDalamOutput').innerHTML = `<strong>Jaga Dalam:</strong><br>${jagaDalam.join('<br>')}`;
             document.getElementById('jagaLuarOutput').innerHTML = `<strong>Jaga Luar:</strong><br>${jagaLuar.join('<br>')}`;
             document.getElementById('tempatWudhuOutput').innerHTML = `<strong>Tempat Wudhu:</strong><br>${tempatWudhu.join('<br>')}`;
             document.getElementById('tadarusOutput').innerHTML = `<strong>Tadarus:</strong><br>${tadarus.join('<br>')}`;
 
-            // Add assigned names to served list
             const newlyServed = [...jagaDalam, ...jagaLuar, ...tempatWudhu, ...tadarus].filter(name => !name.startsWith('(Tidak cukup'));
             addNewlyServedNames(newlyServed);
         }
@@ -316,13 +318,13 @@
                 }
             });
             localStorage.setItem('servedNames', JSON.stringify(servedNames));
-            loadServedNames(); // Refresh the displayed list
+            loadServedNames();
         }
 
         function loadServedNames() {
             const servedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
             const servedListUl = document.getElementById('currentServedList');
-            servedListUl.innerHTML = ''; // Clear existing list
+            servedListUl.innerHTML = '';
             if (servedNames.length === 0) {
                 servedListUl.innerHTML = '<li>Belum ada nama yang tercatat sudah bertugas.</li>';
             } else {
@@ -338,14 +340,14 @@
             if (confirm("Apakah Anda yakin ingin mereset daftar 'Sudah Bertugas'? Ini akan menghapus semua nama dari daftar tersebut.")) {
                 localStorage.removeItem('servedNames');
                 loadServedNames();
-                document.getElementById('servedNames').value = ''; // Clear textarea as well
+                document.getElementById('servedNames').value = '';
                 alert("Daftar 'Sudah Bertugas' telah direset.");
             }
         }
 
         async function copySchedule() {
             const outputDate = document.getElementById('outputDate').textContent;
-            const jagaDalam = document.getElementById('jagaDalamOutput').innerText.replace('Jaga Dalam:', 'Jaga Dalam :'); // Get raw text and adjust formatting
+            const jagaDalam = document.getElementById('jagaDalamOutput').innerText.replace('Jaga Dalam:', 'Jaga Dalam :');
             const jagaLuar = document.getElementById('jagaLuarOutput').innerText.replace('Jaga Luar:', 'Jaga Luar :');
             const tempatWudhu = document.getElementById('tempatWudhuOutput').innerText.replace('Tempat Wudhu:', 'Tempat Wudhu :');
             const tadarus = document.getElementById('tadarusOutput').innerText.replace('Tadarus:', 'Tadarus :');
@@ -367,7 +369,7 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
                 await navigator.clipboard.writeText(scheduleText);
                 const statusSpan = document.getElementById('copyStatus');
                 statusSpan.textContent = 'Jadwal berhasil disalin!';
-                setTimeout(() => statusSpan.textContent = '', 3000); // Clear message after 3 seconds
+                setTimeout(() => statusSpan.textContent = '', 3000);
             } catch (err) {
                 console.error('Gagal menyalin jadwal: ', err);
                 const statusSpan = document.getElementById('copyStatus');
@@ -375,11 +377,60 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
                 statusSpan.style.color = 'red';
                 setTimeout(() => {
                     statusSpan.textContent = '';
-                    statusSpan.style.color = '#28a745'; // Reset color
+                    statusSpan.style.color = '#28a745';
                 }, 3000);
             }
         }
 
+        function saveConfig() {
+            const maleNames = document.getElementById('maleNames').value;
+            const femaleNames = document.getElementById('femaleNames').value;
+            const recitationNames = document.getElementById('recitationNames').value;
+            
+            const config = {
+                maleNames: maleNames,
+                femaleNames: femaleNames,
+                recitationNames: recitationNames
+            };
+            
+            localStorage.setItem('satgasConfig', JSON.stringify(config));
+            
+            const statusP = document.getElementById('configStatus');
+            statusP.textContent = 'Konfigurasi berhasil disimpan!';
+            statusP.style.color = '#28a745';
+            setTimeout(() => statusP.textContent = '', 3000);
+        }
+        
+        function loadConfig() {
+            const config = localStorage.getItem('satgasConfig');
+            if (config) {
+                const parsedConfig = JSON.parse(config);
+                document.getElementById('maleNames').value = parsedConfig.maleNames;
+                document.getElementById('femaleNames').value = parsedConfig.femaleNames;
+                document.getElementById('recitationNames').value = parsedConfig.recitationNames;
+                
+                const statusP = document.getElementById('configStatus');
+                statusP.textContent = 'Konfigurasi berhasil dimuat!';
+                statusP.style.color = '#28a745';
+                setTimeout(() => statusP.textContent = '', 3000);
+            } else {
+                const statusP = document.getElementById('configStatus');
+                statusP.textContent = 'Tidak ada konfigurasi yang tersimpan.';
+                statusP.style.color = '#dc3545';
+                setTimeout(() => statusP.textContent = '', 3000);
+            }
+        }
+
+        function deleteConfig() {
+            if (confirm("Apakah Anda yakin ingin menghapus konfigurasi nama yang tersimpan?")) {
+                localStorage.removeItem('satgasConfig');
+                
+                const statusP = document.getElementById('configStatus');
+                statusP.textContent = 'Konfigurasi berhasil dihapus!';
+                statusP.style.color = '#dc3545';
+                setTimeout(() => statusP.textContent = '', 3000);
+            }
+        }
     </script>
 
 </body>
