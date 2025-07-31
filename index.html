@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Petugas Satgas Adab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .input-section, .schedule-output, .served-list-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .input-section h2, .schedule-output h2, .served-list-section h2 {
+            color: #007bff;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea, input[type="date"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .reset-button {
+            background-color: #dc3545;
+        }
+        .reset-button:hover {
+            background-color: #c82333;
+        }
+        .schedule-output p {
+            margin: 5px 0;
+            white-space: pre-wrap; /* Preserve line breaks from JS */
+        }
+        .schedule-output strong {
+            display: block; /* New line for categories */
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+            color: #0056b3;
+        }
+        .note {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ffeeba;
+            border-left: 5px solid #ffc107;
+            color: #664d03;
+            font-style: italic;
+        }
+        .served-list ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto; /* Scroll for long lists */
+            border: 1px solid #eee;
+            padding: 10px;
+            background-color: #fff;
+        }
+        .served-list li {
+            padding: 5px 0;
+            border-bottom: 1px dotted #eee;
+        }
+        .served-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Jadwal Petugas Satgas Adab</h1>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>Input Data Petugas</h2>
+            <div class="form-group">
+                <label for="dutyDate">Tanggal Jadwal:</label>
+                <input type="date" id="dutyDate">
+            </div>
+            <div class="form-group">
+                <label for="maleNames">Daftar Nama Petugas (Laki-laki, pisahkan dengan baris baru):</label>
+                <textarea id="maleNames" rows="6" placeholder="Asep&#10;Tatang&#10;Budi"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="femaleNames">Daftar Nama Petugas (Perempuan, pisahkan dengan baris baru):</label>
+                <textarea id="femaleNames" rows="6" placeholder="Siti&#10;Ani&#10;Dewi"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="recitationNames">Daftar Nama Petugas Tadarus (pisahkan dengan baris baru):</label>
+                <textarea id="recitationNames" rows="3" placeholder="Farid&#10;Doni"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="servedNames">Nama yang Sudah Bertugas (pisahkan dengan baris baru):</label>
+                <textarea id="servedNames" rows="6" placeholder="Joni&#10;Maria&#10;Dedi"></textarea>
+                <small>Nama di sini tidak akan muncul di jadwal baru.</small>
+            </div>
+            <button onclick="generateSchedule()">Buat Jadwal</button>
+            <button class="reset-button" onclick="resetServedList()">Reset Daftar Sudah Bertugas</button>
+        </div>
+
+        <hr>
+
+        <div class="schedule-output">
+            <h2>Jadwal Petugas Satgas Adab <span id="outputDate"></span></h2>
+            <p id="jagaDalamOutput"><strong>Jaga Dalam:</strong></p>
+            <p id="jagaLuarOutput"><strong>Jaga Luar:</strong></p>
+            <p id="tempatWudhuOutput"><strong>Tempat Wudhu:</strong></p>
+            <p id="tadarusOutput"><strong>Tadarus:</strong></p>
+        </div>
+
+        <hr>
+
+        <div class="served-list-section">
+            <h2>Daftar Nama yang Sudah Bertugas</h2>
+            <div class="served-list">
+                <ul id="currentServedList">
+                    </ul>
+            </div>
+        </div>
+
+        <div class="note">
+            <p><strong>Catatan:</strong></p>
+            <p>Petugas keluar kelas 5 menit sebelum bel dan langsung menempati tempat tugas masing-masing.</p>
+        </div>
+    </div>
+
+    <script>
+        // Load served names from Local Storage on page load
+        document.addEventListener('DOMContentLoaded', (event) => {
+            loadServedNames();
+            // Set default date to today's date
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('dutyDate').value = `${year}-${month}-${day}`;
+        });
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+        }
+
+        function generateSchedule() {
+            const dutyDateInput = document.getElementById('dutyDate').value;
+            let formattedDate = '';
+            if (dutyDateInput) {
+                const dateParts = dutyDateInput.split('-'); // YYYY-MM-DD
+                formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            }
+
+            const maleNamesInput = document.getElementById('maleNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
+            const femaleNamesInput = document.getElementById('femaleNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
+            const recitationNamesInput = document.getElementById('recitationNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
+
+            let servedNames = document.getElementById('servedNames').value.split('\n').map(name => name.trim().toLowerCase()).filter(name => name !== '');
+            
+            // Get served names from Local Storage and combine with input
+            const localServedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
+            servedNames = [...new Set([...servedNames, ...localServedNames.map(name => name.toLowerCase())])]; // Combine and remove duplicates
+
+            // Filter out names that have already served
+            const availableMaleNames = maleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
+            const availableFemaleNames = femaleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
+            const availableRecitationNames = recitationNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
+
+            // If not enough available names, reuse from those who have served (optional, can be adjusted)
+            // For simplicity, this example will just use available. If you want reuse, it'll be more complex.
+            if (availableMaleNames.length < 2) {
+                console.warn("Peringatan: Jumlah petugas laki-laki yang tersedia kurang dari 2. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+            }
+            if (availableFemaleNames.length < 2) {
+                console.warn("Peringatan: Jumlah petugas perempuan yang tersedia kurang dari 2. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+            }
+            if (availableRecitationNames.length < 1) {
+                 console.warn("Peringatan: Jumlah petugas tadarus yang tersedia kurang dari 1. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+            }
+
+            // Shuffle available names to randomize selection
+            shuffleArray(availableMaleNames);
+            shuffleArray(availableFemaleNames);
+            shuffleArray(availableRecitationNames);
+
+            let jagaDalam = [];
+            let jagaLuar = [];
+            let tempatWudhu = [];
+            let tadarus = [];
+
+            // Assign Jaga Dalam (2 cowo, 2 cewe)
+            if (availableMaleNames.length >= 2) {
+                jagaDalam.push(availableMaleNames.shift());
+                jagaDalam.push(availableMaleNames.shift());
+            } else {
+                jagaDalam.push("Tidak cukup cowo"); // Placeholder if not enough
+            }
+            if (availableFemaleNames.length >= 2) {
+                jagaDalam.push(availableFemaleNames.shift());
+                jagaDalam.push(availableFemaleNames.shift());
+            } else {
+                jagaDalam.push("Tidak cukup cewe"); // Placeholder if not enough
+            }
+
+            // Assign Jaga Luar (2 cowo, 2 cewe)
+            if (availableMaleNames.length >= 2) {
+                jagaLuar.push(availableMaleNames.shift());
+                jagaLuar.push(availableMaleNames.shift());
+            } else {
+                jagaLuar.push("Tidak cukup cowo"); // Placeholder if not enough
+            }
+            if (availableFemaleNames.length >= 2) {
+                jagaLuar.push(availableFemaleNames.shift());
+                jagaLuar.push(availableFemaleNames.shift());
+            } else {
+                jagaLuar.push("Tidak cukup cewe"); // Placeholder if not enough
+            }
+
+            // Assign Tempat Wudhu (2 cowo, 2 cewe)
+            if (availableMaleNames.length >= 2) {
+                tempatWudhu.push(availableMaleNames.shift());
+                tempatWudhu.push(availableMaleNames.shift());
+            } else {
+                tempatWudhu.push("Tidak cukup cowo"); // Placeholder if not enough
+            }
+            if (availableFemaleNames.length >= 2) {
+                tempatWudhu.push(availableFemaleNames.shift());
+                tempatWudhu.push(availableFemaleNames.shift());
+            } else {
+                tempatWudhu.push("Tidak cukup cewe"); // Placeholder if not enough
+            }
+            
+            // Assign Tadarus (1 ngaji)
+            if (availableRecitationNames.length >= 1) {
+                tadarus.push(availableRecitationNames.shift());
+            } else {
+                tadarus.push("Tidak cukup petugas tadarus"); // Placeholder if not enough
+            }
+
+
+            // Update output
+            document.getElementById('outputDate').textContent = `(${formattedDate})`;
+            document.getElementById('jagaDalamOutput').innerHTML = `<strong>Jaga Dalam:</strong><br>${jagaDalam.join('<br>')}`;
+            document.getElementById('jagaLuarOutput').innerHTML = `<strong>Jaga Luar:</strong><br>${jagaLuar.join('<br>')}`;
+            document.getElementById('tempatWudhuOutput').innerHTML = `<strong>Tempat Wudhu:</strong><br>${tempatWudhu.join('<br>')}`;
+            document.getElementById('tadarusOutput').innerHTML = `<strong>Tadarus:</strong><br>${tadarus.join('<br>')}`;
+
+            // Add assigned names to served list
+            const newlyServed = [...jagaDalam, ...jagaLuar, ...tempatWudhu, ...tadarus].filter(name => !name.startsWith('Tidak cukup'));
+            addNewlyServedNames(newlyServed);
+        }
+
+        function addNewlyServedNames(names) {
+            let servedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
+            names.forEach(name => {
+                if (name && !servedNames.includes(name)) {
+                    servedNames.push(name);
+                }
+            });
+            localStorage.setItem('servedNames', JSON.stringify(servedNames));
+            loadServedNames(); // Refresh the displayed list
+        }
+
+        function loadServedNames() {
+            const servedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
+            const servedListUl = document.getElementById('currentServedList');
+            servedListUl.innerHTML = ''; // Clear existing list
+            if (servedNames.length === 0) {
+                servedListUl.innerHTML = '<li>Belum ada nama yang tercatat sudah bertugas.</li>';
+            } else {
+                servedNames.forEach(name => {
+                    const li = document.createElement('li');
+                    li.textContent = name;
+                    servedListUl.appendChild(li);
+                });
+            }
+        }
+
+        function resetServedList() {
+            if (confirm("Apakah Anda yakin ingin mereset daftar 'Sudah Bertugas'? Ini akan menghapus semua nama dari daftar tersebut.")) {
+                localStorage.removeItem('servedNames');
+                loadServedNames();
+                document.getElementById('servedNames').value = ''; // Clear textarea as well
+                alert("Daftar 'Sudah Bertugas' telah direset.");
+            }
+        }
+
+    </script>
+
+</body>
+</html>
