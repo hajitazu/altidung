@@ -132,6 +132,44 @@
         .served-list li:last-child {
             border-bottom: none;
         }
+
+        /* Styles for the popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s ease;
+        }
+        .popup-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+        .popup-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 300px;
+            max-width: 90%;
+        }
+        .popup-content h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .popup-content button {
+            margin: 10px 5px;
+            min-width: 100px;
+        }
     </style>
 </head>
 <body>
@@ -142,13 +180,11 @@
         <div class="config-section">
             <h2>Konfigurasi Nama</h2>
             <div class="button-group">
-                <button class="config-button" onclick="loadConfig('config1')">Muat Config 1</button>
-                <button class="config-button" onclick="saveConfig('config1')">Simpan Config 1</button>
-                <button class="config-button reset-button" onclick="deleteConfig('config1')">Hapus Config 1</button>
+                <button class="config-button" id="config1Btn">Config 1</button>
             </div>
             <p id="configStatus"></p>
         </div>
-
+        
         <div class="input-section">
             <h2>Input Data Petugas</h2>
             <div class="form-group">
@@ -201,6 +237,16 @@
         <div class="note">
             <p><strong>Catatan:</strong></p>
             <p>Petugas keluar kelas 5 menit sebelum bel dan langsung menempati tempat tugas masing-masing.</p>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="configPopup">
+        <div class="popup-content">
+            <h3>Pilihan Config 1</h3>
+            <button class="config-button" onclick="loadConfig('config1'); closePopup();">Muat Config</button>
+            <button class="config-button" onclick="saveConfig('config1'); closePopup();">Simpan Config</button>
+            <button class="config-button reset-button" onclick="deleteConfig('config1'); closePopup();">Hapus Config</button>
+            <button onclick="closePopup()">Tutup</button>
         </div>
     </div>
 
@@ -364,7 +410,7 @@ ${tempatWudhu}
 ${tadarus}
 
 Note :
-Petugas keluar kelas 5 menit sebelum bel dan langsung menempati tempat tugas masing2`;
+Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas masing2`;
 
             try {
                 await navigator.clipboard.writeText(scheduleText);
@@ -432,6 +478,34 @@ Petugas keluar kelas 5 menit sebelum bel dan langsung menempati tempat tugas mas
                 setTimeout(() => statusP.textContent = '', 3000);
             }
         }
+
+        // Popup Functions
+        function openPopup() {
+            document.getElementById('configPopup').classList.add('visible');
+        }
+
+        function closePopup() {
+            document.getElementById('configPopup').classList.remove('visible');
+        }
+        
+        // Handle single and double click
+        let config1Btn = document.getElementById('config1Btn');
+        let clickTimer = null;
+
+        config1Btn.addEventListener('click', function(event) {
+            if (clickTimer === null) {
+                clickTimer = setTimeout(function() {
+                    loadConfig('config1');
+                    clickTimer = null;
+                }, 300); // 300ms is a common double-click delay
+            }
+        });
+
+        config1Btn.addEventListener('dblclick', function(event) {
+            clearTimeout(clickTimer);
+            clickTimer = null;
+            openPopup();
+        });
     </script>
 
 </body>
