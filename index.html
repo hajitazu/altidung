@@ -133,7 +133,7 @@
             border-bottom: none;
         }
 
-        /* Styles for the popup */
+        /* Styles for popups */
         .popup-overlay {
             position: fixed;
             top: 0;
@@ -142,7 +142,7 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             display: flex;
-            justify-content-center;
+            justify-content: center;
             align-items: center;
             z-index: 1000;
             visibility: hidden;
@@ -169,6 +169,22 @@
         .popup-content button {
             margin: 10px 5px;
             min-width: 100px;
+        }
+        .pj-menu-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+        .pj-menu-list li {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .pj-menu-list li:hover {
+            background-color: #e9e9e9;
         }
     </style>
 </head>
@@ -243,15 +259,31 @@
     <div class="popup-overlay" id="configPopup">
         <div class="popup-content">
             <h3>Pilihan Config 1</h3>
-            <button class="config-button" onclick="loadConfig('config1'); closePopup();">Muat Config</button>
-            <button class="config-button" onclick="saveConfig('config1'); closePopup();">Simpan Config</button>
-            <button class="config-button reset-button" onclick="deleteConfig('config1'); closePopup();">Hapus Config</button>
-            <button onclick="closePopup()">Tutup</button>
+            <button class="config-button" onclick="loadConfig('config1'); closePopup('configPopup');">Muat Config</button>
+            <button class="config-button" onclick="saveConfig('config1'); closePopup('configPopup');">Simpan Config</button>
+            <button class="config-button reset-button" onclick="deleteConfig('config1'); closePopup('configPopup');">Hapus Config</button>
+            <button onclick="closePopup('configPopup')">Tutup</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="pjPopup">
+        <div class="popup-content">
+            <h3>Pilih PJ untuk Jaga Dalam</h3>
+            <ul id="pj-menu" class="pj-menu-list">
+                </ul>
         </div>
     </div>
 
     <script>
-        // Load served names from Local Storage on page load
+        let generatedLists = {
+            jagaDalam: [],
+            jagaLuar: [],
+            tempatWudhu: [],
+            tadarus: []
+        };
+        let maleNamesList = [];
+        let femaleNamesList = [];
+
         document.addEventListener('DOMContentLoaded', (event) => {
             loadServedNames();
             const today = new Date();
@@ -268,17 +300,14 @@
             }
         }
 
+        // Modified function to only generate lists and show PJ popup
         function generateSchedule() {
-            const dutyDateInput = document.getElementById('dutyDate').value;
-            let formattedDate = '';
-            if (dutyDateInput) {
-                const dateParts = dutyDateInput.split('-');
-                formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-            }
-
             const maleNamesInput = document.getElementById('maleNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
             const femaleNamesInput = document.getElementById('femaleNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
             const recitationNamesInput = document.getElementById('recitationNames').value.split('\n').map(name => name.trim()).filter(name => name !== '');
+
+            maleNamesList = maleNamesInput;
+            femaleNamesList = femaleNamesInput;
 
             let servedNames = document.getElementById('servedNames').value.split('\n').map(name => name.trim().toLowerCase()).filter(name => name !== '');
             
@@ -291,60 +320,94 @@
 
             if (availableMaleNames.length < 2 || availableFemaleNames.length < 2 || availableRecitationNames.length < 1) {
                 alert("Peringatan: Jumlah petugas yang tersedia kurang dari yang dibutuhkan. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+                return;
             }
 
             shuffleArray(availableMaleNames);
             shuffleArray(availableFemaleNames);
             shuffleArray(availableRecitationNames);
 
-            let jagaDalam = [];
-            let jagaLuar = [];
-            let tempatWudhu = [];
-            let tadarus = [];
-
-            if (availableMaleNames.length >= 2) {
-                jagaDalam.push(availableMaleNames.shift());
-                jagaDalam.push(availableMaleNames.shift());
-            } else {
-                jagaDalam.push("(Tidak cukup cowo)");
-            }
-            if (availableFemaleNames.length >= 2) {
-                jagaDalam.push(availableFemaleNames.shift());
-                jagaDalam.push(availableFemaleNames.shift());
-            } else {
-                jagaDalam.push("(Tidak cukup cewe)");
-            }
-
-            if (availableMaleNames.length >= 2) {
-                jagaLuar.push(availableMaleNames.shift());
-                jagaLuar.push(availableMaleNames.shift());
-            } else {
-                jagaLuar.push("(Tidak cukup cowo)");
-            }
-            if (availableFemaleNames.length >= 2) {
-                jagaLuar.push(availableFemaleNames.shift());
-                jagaLuar.push(availableFemaleNames.shift());
-            } else {
-                jagaLuar.push("(Tidak cukup cewe)");
-            }
-
-            if (availableMaleNames.length >= 2) {
-                tempatWudhu.push(availableMaleNames.shift());
-                tempatWudhu.push(availableMaleNames.shift());
-            } else {
-                tempatWudhu.push("(Tidak cukup cowo)");
-            }
-            if (availableFemaleNames.length >= 2) {
-                tempatWudhu.push(availableFemaleNames.shift());
-                tempatWudhu.push(availableFemaleNames.shift());
-            } else {
-                tempatWudhu.push("(Tidak cukup cewe)");
-            }
+            generatedLists.jagaDalam = [];
+            generatedLists.jagaLuar = [];
+            generatedLists.tempatWudhu = [];
+            generatedLists.tadarus = [];
             
-            if (availableRecitationNames.length >= 1) {
-                tadarus.push(availableRecitationNames.shift());
-            } else {
-                tadarus.push("(Tidak cukup petugas tadarus)");
+            generatedLists.jagaDalam.push(availableMaleNames.shift());
+            generatedLists.jagaDalam.push(availableMaleNames.shift());
+            generatedLists.jagaDalam.push(availableFemaleNames.shift());
+            generatedLists.jagaDalam.push(availableFemaleNames.shift());
+            
+            generatedLists.jagaLuar.push(availableMaleNames.shift());
+            generatedLists.jagaLuar.push(availableMaleNames.shift());
+            generatedLists.jagaLuar.push(availableFemaleNames.shift());
+            generatedLists.jagaLuar.push(availableFemaleNames.shift());
+
+            generatedLists.tempatWudhu.push(availableMaleNames.shift());
+            generatedLists.tempatWudhu.push(availableMaleNames.shift());
+            generatedLists.tempatWudhu.push(availableFemaleNames.shift());
+            generatedLists.tempatWudhu.push(availableFemaleNames.shift());
+            
+            generatedLists.tadarus.push(availableRecitationNames.shift());
+
+            showPjSelectionPopup();
+        }
+
+        function showPjSelectionPopup() {
+            const pjMenu = document.getElementById('pj-menu');
+            pjMenu.innerHTML = '';
+            
+            generatedLists.jagaDalam.forEach(name => {
+                const li = document.createElement('li');
+                li.textContent = name;
+                li.onclick = () => selectPj(name);
+                pjMenu.appendChild(li);
+            });
+
+            document.getElementById('pjPopup').classList.add('visible');
+        }
+
+        function selectPj(pjName) {
+            closePopup('pjPopup');
+
+            // Find the gender of the selected PJ
+            let pjGender = '';
+            if (maleNamesList.includes(pjName)) {
+                pjGender = 'male';
+            } else if (femaleNamesList.includes(pjName)) {
+                pjGender = 'female';
+            }
+
+            // Add (PJ) tag to the selected name and re-order if needed
+            let jagaDalamFinal = generatedLists.jagaDalam.map(name => {
+                if (name === pjName) {
+                    return `${name} (PJ)`;
+                }
+                return name;
+            });
+
+            if (pjGender === 'female') {
+                const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name));
+                const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name));
+                
+                // Re-assemble the list with female names first
+                jagaDalamFinal = [
+                    ...femaleInJagaDalam.map(name => name === pjName ? `${name} (PJ)` : name),
+                    ...maleInJagaDalam
+                ];
+            } else if (pjGender === 'male') {
+                // Keep the original order, just tag the PJ
+                // The mapping above already handles the tagging, so no further changes needed here
+            }
+
+            renderSchedule(jagaDalamFinal, generatedLists.jagaLuar, generatedLists.tempatWudhu, generatedLists.tadarus);
+        }
+
+        function renderSchedule(jagaDalam, jagaLuar, tempatWudhu, tadarus) {
+            const dutyDateInput = document.getElementById('dutyDate').value;
+            let formattedDate = '';
+            if (dutyDateInput) {
+                const dateParts = dutyDateInput.split('-');
+                formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
             }
 
             document.getElementById('outputDate').textContent = `(${formattedDate})`;
@@ -353,7 +416,7 @@
             document.getElementById('tempatWudhuOutput').innerHTML = `<strong>Tempat Wudhu:</strong><br>${tempatWudhu.join('<br>')}`;
             document.getElementById('tadarusOutput').innerHTML = `<strong>Tadarus:</strong><br>${tadarus.join('<br>')}`;
 
-            const newlyServed = [...jagaDalam, ...jagaLuar, ...tempatWudhu, ...tadarus].filter(name => !name.startsWith('(Tidak cukup'));
+            const newlyServed = [...generatedLists.jagaDalam, ...generatedLists.jagaLuar, ...generatedLists.tempatWudhu, ...generatedLists.tadarus].filter(name => !name.startsWith('(Tidak cukup'));
             addNewlyServedNames(newlyServed);
         }
 
@@ -466,7 +529,7 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
                     statusP.textContent = `Siap Lengkap Konfigurasi ${configName} berhasil dimuat`;
                     statusP.style.color = '#28a745';
                 } else {
-                    statusP.textContent = `Siap Lengkap Konfigurasi ${configName} berhasil dimuat`;
+                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat`;
                     statusP.style.color = '#28a745';
                 }
 
@@ -490,12 +553,12 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
         }
 
         // Popup Functions
-        function openPopup() {
-            document.getElementById('configPopup').classList.add('visible');
+        function openPopup(id) {
+            document.getElementById(id).classList.add('visible');
         }
 
-        function closePopup() {
-            document.getElementById('configPopup').classList.remove('visible');
+        function closePopup(id) {
+            document.getElementById(id).classList.remove('visible');
         }
         
         // Handle single and double click
@@ -514,7 +577,7 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
         config1Btn.addEventListener('dblclick', function(event) {
             clearTimeout(clickTimer);
             clickTimer = null;
-            openPopup();
+            openPopup('configPopup');
         });
     </script>
 
