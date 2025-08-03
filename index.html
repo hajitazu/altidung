@@ -458,16 +458,15 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
                 document.getElementById('femaleNames').value = parsedConfig.femaleNames;
                 document.getElementById('recitationNames').value = parsedConfig.recitationNames;
                 
-                // Hitung total nama setelah dimuat
                 const maleCount = parsedConfig.maleNames.split('\n').filter(name => name.trim() !== '').length;
                 const femaleCount = parsedConfig.femaleNames.split('\n').filter(name => name.trim() !== '').length;
                 const totalCount = maleCount + femaleCount;
 
                 if (totalCount === 28) {
-                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat! Siap Lengkap`;
+                    statusP.textContent = `Siap Lengkap Konfigurasi ${configName} berhasil dimuat`;
                     statusP.style.color = '#28a745';
                 } else {
-                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat!`;
+                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat`;
                     statusP.style.color = '#28a745';
                 }
 
@@ -518,5 +517,6 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
             openPopup();
         });
     </script>
+
 </body>
 </html>
