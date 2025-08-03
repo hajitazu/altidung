@@ -318,7 +318,8 @@
             const availableFemaleNames = femaleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
             const availableRecitationNames = recitationNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
 
-            if (availableMaleNames.length < 2 || availableFemaleNames.length < 2 || availableRecitationNames.length < 1) {
+            // Check if there are enough people to fill the roles
+            if (availableMaleNames.length < 6 || availableFemaleNames.length < 6 || availableRecitationNames.length < 1) {
                 alert("Peringatan: Jumlah petugas yang tersedia kurang dari yang dibutuhkan. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
                 return;
             }
@@ -332,11 +333,13 @@
             generatedLists.tempatWudhu = [];
             generatedLists.tadarus = [];
             
+            // Assign names to Jaga Dalam
             generatedLists.jagaDalam.push(availableMaleNames.shift());
             generatedLists.jagaDalam.push(availableMaleNames.shift());
             generatedLists.jagaDalam.push(availableFemaleNames.shift());
             generatedLists.jagaDalam.push(availableFemaleNames.shift());
-            
+
+            // Assign names to other roles
             generatedLists.jagaLuar.push(availableMaleNames.shift());
             generatedLists.jagaLuar.push(availableMaleNames.shift());
             generatedLists.jagaLuar.push(availableFemaleNames.shift());
@@ -347,7 +350,11 @@
             generatedLists.tempatWudhu.push(availableFemaleNames.shift());
             generatedLists.tempatWudhu.push(availableFemaleNames.shift());
             
-            generatedLists.tadarus.push(availableRecitationNames.shift());
+            if (availableRecitationNames.length >= 1) {
+                generatedLists.tadarus.push(availableRecitationNames.shift());
+            } else {
+                generatedLists.tadarus.push("(Tidak cukup petugas tadarus)");
+            }
 
             showPjSelectionPopup();
         }
@@ -370,33 +377,21 @@
             closePopup('pjPopup');
 
             // Find the gender of the selected PJ
-            let pjGender = '';
-            if (maleNamesList.includes(pjName)) {
-                pjGender = 'male';
-            } else if (femaleNamesList.includes(pjName)) {
-                pjGender = 'female';
-            }
+            const isPjMale = maleNamesList.includes(pjName);
+            const isPjFemale = femaleNamesList.includes(pjName);
 
-            // Add (PJ) tag to the selected name and re-order if needed
-            let jagaDalamFinal = generatedLists.jagaDalam.map(name => {
-                if (name === pjName) {
-                    return `${name} (PJ)`;
-                }
-                return name;
-            });
-
-            if (pjGender === 'female') {
-                const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name));
-                const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name));
-                
-                // Re-assemble the list with female names first
-                jagaDalamFinal = [
-                    ...femaleInJagaDalam.map(name => name === pjName ? `${name} (PJ)` : name),
-                    ...maleInJagaDalam
-                ];
-            } else if (pjGender === 'male') {
-                // Keep the original order, just tag the PJ
-                // The mapping above already handles the tagging, so no further changes needed here
+            let jagaDalamFinal = [];
+            const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name));
+            const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name));
+            
+            if (isPjFemale) {
+                // Female PJ: Females first, then males
+                const sortedFemales = femaleInJagaDalam.map(name => name === pjName ? `${name} (PJ)` : name);
+                jagaDalamFinal = [...sortedFemales, ...maleInJagaDalam];
+            } else {
+                // Male PJ: Males first, then females
+                const sortedMales = maleInJagaDalam.map(name => name === pjName ? `${name} (PJ)` : name);
+                jagaDalamFinal = [...sortedMales, ...femaleInJagaDalam];
             }
 
             renderSchedule(jagaDalamFinal, generatedLists.jagaLuar, generatedLists.tempatWudhu, generatedLists.tadarus);
