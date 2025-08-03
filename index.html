@@ -142,7 +142,7 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             display: flex;
-            justify-content: center;
+            justify-content-center;
             align-items: center;
             z-index: 1000;
             visibility: hidden;
@@ -450,18 +450,29 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
         
         function loadConfig(configName) {
             const config = localStorage.getItem(configName);
+            const statusP = document.getElementById('configStatus');
+
             if (config) {
                 const parsedConfig = JSON.parse(config);
                 document.getElementById('maleNames').value = parsedConfig.maleNames;
                 document.getElementById('femaleNames').value = parsedConfig.femaleNames;
                 document.getElementById('recitationNames').value = parsedConfig.recitationNames;
                 
-                const statusP = document.getElementById('configStatus');
-                statusP.textContent = `Konfigurasi ${configName} berhasil dimuat!`;
-                statusP.style.color = '#28a745';
-                setTimeout(() => statusP.textContent = '', 3000);
+                // Hitung total nama setelah dimuat
+                const maleCount = parsedConfig.maleNames.split('\n').filter(name => name.trim() !== '').length;
+                const femaleCount = parsedConfig.femaleNames.split('\n').filter(name => name.trim() !== '').length;
+                const totalCount = maleCount + femaleCount;
+
+                if (totalCount === 28) {
+                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat! Siap Lengkap`;
+                    statusP.style.color = '#28a745';
+                } else {
+                    statusP.textContent = `Konfigurasi ${configName} berhasil dimuat!`;
+                    statusP.style.color = '#28a745';
+                }
+
+                setTimeout(() => statusP.textContent = '', 5000);
             } else {
-                const statusP = document.getElementById('configStatus');
                 statusP.textContent = `Tidak ada konfigurasi ${configName} yang tersimpan.`;
                 statusP.style.color = '#dc3545';
                 setTimeout(() => statusP.textContent = '', 3000);
@@ -507,6 +518,5 @@ Petugas keluar kelas 5 menit sebelum bell dan langsung menempati tempat tugas ma
             openPopup();
         });
     </script>
-
 </body>
 </html>
