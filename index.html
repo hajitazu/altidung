@@ -269,7 +269,7 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
 
     <div class="popup-overlay" id="pjPopup">
         <div class="popup-content">
-            <h3>Pilih PJ untuk Jaga Dalam</h3>
+            <h3 id="pjPopupTitle">Pilih PJ untuk Jaga Dalam <span id="pjPagination"></span></h3>
             <ul id="pj-menu" class="pj-menu-list">
                 </ul>
         </div>
@@ -277,8 +277,8 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
 
     <div class="popup-overlay" id="doubleDutyPersonPopup">
         <div class="popup-content">
-            <h3>Pilih Petugas Ganda (Double Duty)</h3>
-            <p>Satu nama petugas perempuan dibutuhkan untuk bertugas ganda.</p>
+            <h3 id="doubleDutyPersonPopupTitle">Pilih Petugas Ganda <span id="doubleDutyPersonPagination"></span></h3>
+            <p>Satu nama petugas <span id="doubleDutyGenderText"></span> dibutuhkan untuk bertugas ganda.</p>
             <ul id="double-duty-person-menu" class="pj-menu-list">
                 </ul>
         </div>
@@ -286,7 +286,7 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
 
     <div class="popup-overlay" id="doubleDutyAssignPopup">
         <div class="popup-content">
-            <h3>Pilih Posisi Tugas Ganda</h3>
+            <h3 id="doubleDutyAssignPopupTitle">Pilih Posisi Tugas Ganda <span id="doubleDutyAssignPagination"></span></h3>
             <p id="doubleDutyPersonName"></p>
             <ul id="double-duty-assign-menu" class="pj-menu-list">
                 </ul>
@@ -304,6 +304,7 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
         let femaleNamesList = [];
         let recitationNamesList = [];
         let doubleDutyRequired = false;
+        let doubleDutyGender = null;
         let doubleDutyPersonName = '';
         let placeholderRoles = [];
         let isPjFemale = false;
@@ -341,8 +342,24 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
             const availableFemaleNames = femaleNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
             const availableRecitationNames = recitationNamesInput.filter(name => !servedNames.includes(name.toLowerCase()));
 
-            if (availableMaleNames.length < 6 || availableFemaleNames.length < 5 || availableRecitationNames.length < 1) {
-                alert("Peringatan: Jumlah petugas yang tersedia kurang dari yang dibutuhkan. Mungkin perlu penambahan nama atau reset daftar 'Sudah Bertugas'.");
+            doubleDutyRequired = false;
+            doubleDutyGender = null;
+            placeholderRoles = [];
+
+            // Check if male double duty is needed
+            if (availableMaleNames.length === 5) {
+                doubleDutyRequired = true;
+                doubleDutyGender = 'male';
+            }
+            // Check if female double duty is needed
+            if (availableFemaleNames.length === 5) {
+                doubleDutyRequired = true;
+                doubleDutyGender = 'female';
+            }
+
+            // Peringatan jika jumlah petugas tidak mencukupi, baik dengan atau tanpa double duty
+            if (availableMaleNames.length < 5 || availableFemaleNames.length < 5 || availableRecitationNames.length < 1) {
+                alert("Peringatan: Jumlah petugas yang tersedia kurang dari yang dibutuhkan (minimal 5 orang). Periksa kembali daftar nama atau reset daftar 'Sudah Bertugas'.");
                 return;
             }
 
@@ -354,46 +371,64 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
             generatedLists.jagaLuar = [];
             generatedLists.tempatWudhu = [];
             generatedLists.tadarus = [];
-            doubleDutyRequired = false;
-            placeholderRoles = [];
 
-            // Assign names, with a placeholder if double duty is needed
-            let allFemaleRolesFilled = false;
-            let femaleCounter = 0;
+            const totalMaleSlots = 6;
+            const totalFemaleSlots = 6;
+            let currentMaleIndex = 0;
+            let currentFemaleIndex = 0;
+
+            // Assign Jaga Dalam (2M, 2F)
+            for(let i = 0; i < 2; i++) {
+                if (currentMaleIndex < availableMaleNames.length) {
+                    generatedLists.jagaDalam.push(availableMaleNames[currentMaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'male') {
+                    generatedLists.jagaDalam.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('jagaDalam');
+                }
+            }
+            for(let i = 0; i < 2; i++) {
+                if (currentFemaleIndex < availableFemaleNames.length) {
+                    generatedLists.jagaDalam.push(availableFemaleNames[currentFemaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'female') {
+                    generatedLists.jagaDalam.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('jagaDalam');
+                }
+            }
+
+            // Assign Jaga Luar (2M, 2F)
+            for(let i = 0; i < 2; i++) {
+                if (currentMaleIndex < availableMaleNames.length) {
+                    generatedLists.jagaLuar.push(availableMaleNames[currentMaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'male') {
+                    generatedLists.jagaLuar.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('jagaLuar');
+                }
+            }
+            for(let i = 0; i < 2; i++) {
+                if (currentFemaleIndex < availableFemaleNames.length) {
+                    generatedLists.jagaLuar.push(availableFemaleNames[currentFemaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'female') {
+                    generatedLists.jagaLuar.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('jagaLuar');
+                }
+            }
             
-            if (availableFemaleNames.length === 5) {
-                doubleDutyRequired = true;
-                placeholderRoles = ['jagaDalam', 'jagaLuar', 'tempatWudhu'];
+            // Assign Tempat Wudhu (2M, 2F)
+            for(let i = 0; i < 2; i++) {
+                if (currentMaleIndex < availableMaleNames.length) {
+                    generatedLists.tempatWudhu.push(availableMaleNames[currentMaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'male') {
+                    generatedLists.tempatWudhu.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('tempatWudhu');
+                }
             }
-
-            // Assign Jaga Dalam
-            generatedLists.jagaDalam.push(availableMaleNames.shift());
-            generatedLists.jagaDalam.push(availableMaleNames.shift());
-            generatedLists.jagaDalam.push(availableFemaleNames.shift());
-            if (availableFemaleNames.length > 0) {
-                generatedLists.jagaDalam.push(availableFemaleNames.shift());
-            } else {
-                 generatedLists.jagaDalam.push('__DOUBLE_DUTY_PLACEHOLDER__');
-            }
-
-            // Assign Jaga Luar
-            generatedLists.jagaLuar.push(availableMaleNames.shift());
-            generatedLists.jagaLuar.push(availableMaleNames.shift());
-            generatedLists.jagaLuar.push(availableFemaleNames.shift());
-            if (availableFemaleNames.length > 0) {
-                generatedLists.jagaLuar.push(availableFemaleNames.shift());
-            } else {
-                generatedLists.jagaLuar.push('__DOUBLE_DUTY_PLACEHOLDER__');
-            }
-
-            // Assign Tempat Wudhu
-            generatedLists.tempatWudhu.push(availableMaleNames.shift());
-            generatedLists.tempatWudhu.push(availableMaleNames.shift());
-            generatedLists.tempatWudhu.push(availableFemaleNames.shift());
-            if (availableFemaleNames.length > 0) {
-                generatedLists.tempatWudhu.push(availableFemaleNames.shift());
-            } else {
-                generatedLists.tempatWudhu.push('__DOUBLE_DUTY_PLACEHOLDER__');
+            for(let i = 0; i < 2; i++) {
+                if (currentFemaleIndex < availableFemaleNames.length) {
+                    generatedLists.tempatWudhu.push(availableFemaleNames[currentFemaleIndex++]);
+                } else if (doubleDutyRequired && doubleDutyGender === 'female') {
+                    generatedLists.tempatWudhu.push('__DOUBLE_DUTY_PLACEHOLDER__');
+                    placeholderRoles.push('tempatWudhu');
+                }
             }
 
             // Assign Tadarus
@@ -408,12 +443,13 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
         }
 
         function showPjSelectionPopup() {
+            document.getElementById('pjPagination').textContent = '1/3';
             const pjMenu = document.getElementById('pj-menu');
             pjMenu.innerHTML = '';
             
             generatedLists.jagaDalam.forEach(name => {
                 const li = document.createElement('li');
-                li.textContent = name.replace('__DOUBLE_DUTY_PLACEHOLDER__', '(Slot Perempuan Kosong)');
+                li.textContent = name.includes('__DOUBLE_DUTY_PLACEHOLDER__') ? '(Slot Kosong)' : name;
                 li.onclick = () => selectPj(name);
                 pjMenu.appendChild(li);
             });
@@ -423,14 +459,18 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
 
         function selectPj(pjName) {
             closePopup('pjPopup');
+            
+            if (pjName.includes('__DOUBLE_DUTY_PLACEHOLDER__')) {
+                alert("Mohon pilih nama petugas, bukan slot kosong.");
+                openPopup('pjPopup');
+                return;
+            }
 
-            // Find the gender of the selected PJ
             isPjFemale = femaleNamesList.includes(pjName);
             
-            // Tag the PJ and re-order the list
             let jagaDalamFinal = [];
-            const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name));
-            const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name) || name === '__DOUBLE_DUTY_PLACEHOLDER__');
+            const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name) || name.includes('__DOUBLE_DUTY_PLACEHOLDER__') && doubleDutyGender === 'male');
+            const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name) || name.includes('__DOUBLE_DUTY_PLACEHOLDER__') && doubleDutyGender === 'female');
             
             if (isPjFemale) {
                 const sortedFemales = femaleInJagaDalam.map(name => name === pjName ? `${name} (PJ)` : name);
@@ -449,6 +489,7 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
         }
 
         function showDoubleDutyPersonPopup() {
+            document.getElementById('doubleDutyPersonPagination').textContent = '2/3';
             const doubleDutyPersonMenu = document.getElementById('double-duty-person-menu');
             doubleDutyPersonMenu.innerHTML = '';
 
@@ -456,16 +497,18 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
             const localServedNames = JSON.parse(localStorage.getItem('servedNames')) || [];
             const allServed = [...new Set([...servedNames, ...localServedNames])];
             
-            // Only show female names from the served list
-            const servedFemaleNames = allServed.filter(name => femaleNamesList.includes(name));
+            const genderNamesList = doubleDutyGender === 'male' ? maleNamesList : femaleNamesList;
+            const servedFilteredNames = allServed.filter(name => genderNamesList.includes(name));
 
-            if (servedFemaleNames.length === 0) {
-                 alert("Peringatan: Tidak ada nama perempuan di daftar 'Sudah Bertugas' untuk dijadikan petugas ganda. Jadwal akan dibuat tanpa petugas ganda.");
-                 renderSchedule(); // Render without double duty
+            document.getElementById('doubleDutyGenderText').textContent = doubleDutyGender === 'male' ? 'laki-laki' : 'perempuan';
+
+            if (servedFilteredNames.length === 0) {
+                 alert(`Peringatan: Tidak ada nama ${document.getElementById('doubleDutyGenderText').textContent} di daftar 'Sudah Bertugas' untuk dijadikan petugas ganda. Jadwal akan dibuat tanpa petugas ganda.`);
+                 renderSchedule();
                  return;
             }
 
-            servedFemaleNames.forEach(name => {
+            servedFilteredNames.forEach(name => {
                 const li = document.createElement('li');
                 li.textContent = name;
                 li.onclick = () => selectDoubleDutyPerson(name);
@@ -482,17 +525,26 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
         }
 
         function showDoubleDutyAssignmentPopup() {
+            document.getElementById('doubleDutyAssignPagination').textContent = '3/3';
             const doubleDutyAssignMenu = document.getElementById('double-duty-assign-menu');
             doubleDutyAssignMenu.innerHTML = '';
             
-            document.getElementById('doubleDutyPersonName').textContent = `Pilih posisi untuk ${doubleDutyPersonName} (Double Duty):`;
+            document.getElementById('doubleDutyPersonName').textContent = `Pilih posisi untuk ${doubleDutyPersonName}:`;
 
-            placeholderRoles.forEach(role => {
+            const availableRoles = ['jagaDalam', 'jagaLuar', 'tempatWudhu'];
+            
+            // Check if tadarus is an option for male double duty
+            if (doubleDutyGender === 'male' && recitationNamesList.includes(doubleDutyPersonName)) {
+                availableRoles.push('tadarus');
+            }
+
+            availableRoles.forEach(role => {
                 const li = document.createElement('li');
                 let roleName = '';
                 if (role === 'jagaDalam') roleName = 'Jaga Dalam';
                 if (role === 'jagaLuar') roleName = 'Jaga Luar';
                 if (role === 'tempatWudhu') roleName = 'Tempat Wudhu';
+                if (role === 'tadarus') roleName = 'Tadarus';
 
                 li.textContent = roleName;
                 li.onclick = () => assignDoubleDutyRole(role);
@@ -505,43 +557,26 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
         function assignDoubleDutyRole(role) {
             closePopup('doubleDutyAssignPopup');
 
-            // Find and replace the placeholder with the double-duty person's name
-            const placeholderIndex = generatedLists[role].findIndex(name => name === '__DOUBLE_DUTY_PLACEHOLDER__');
-            if (placeholderIndex !== -1) {
-                generatedLists[role][placeholderIndex] = `${doubleDutyPersonName} (Double Duty)`;
+            if (role === 'tadarus') {
+                generatedLists.tadarus.push(`${doubleDutyPersonName} (Double Duty)`);
             } else {
-                // If the placeholder is not found in the selected role, find it anywhere and replace it
-                for (const key in generatedLists) {
-                    if (Array.isArray(generatedLists[key])) {
-                        const index = generatedLists[key].indexOf('__DOUBLE_DUTY_PLACEHOLDER__');
-                        if (index !== -1) {
-                            generatedLists[key][index] = `${doubleDutyPersonName} (Double Duty)`;
-                            break;
+                const placeholderIndex = generatedLists[role].findIndex(name => name.includes('__DOUBLE_DUTY_PLACEHOLDER__'));
+                if (placeholderIndex !== -1) {
+                    generatedLists[role][placeholderIndex] = `${doubleDutyPersonName} (Double Duty)`;
+                } else {
+                    for (const key in generatedLists) {
+                        if (Array.isArray(generatedLists[key])) {
+                            const index = generatedLists[key].indexOf('__DOUBLE_DUTY_PLACEHOLDER__');
+                            if (index !== -1) {
+                                generatedLists[key][index] = `${doubleDutyPersonName} (Double Duty)`;
+                                break;
+                            }
                         }
                     }
                 }
             }
-
-            // Now, finalize the PJ order for Jaga Dalam, since the PJ name might have been assigned a double duty.
-            let finalJagaDalam = generatedLists.jagaDalam;
-            
-            const pjName = generatedLists.jagaDalam.find(name => name.includes('(PJ)'));
-            if (isPjFemale) {
-                 const maleInJagaDalam = generatedLists.jagaDalam.filter(name => maleNamesList.includes(name));
-                 const femaleInJagaDalam = generatedLists.jagaDalam.filter(name => femaleNamesList.includes(name) || name.includes('(Double Duty)'));
-                 // Ensure PJ is still tagged and at the top of the female list
-                 const pjIndex = femaleInJagaDalam.findIndex(name => name.includes(pjName));
-                 if (pjIndex !== -1) {
-                     const tempPj = femaleInJagaDalam.splice(pjIndex, 1)[0];
-                     femaleInJagaDalam.unshift(tempPj);
-                 }
-                 finalJagaDalam = [...femaleInJagaDalam, ...maleInJagaDalam];
-            }
-            generatedLists.jagaDalam = finalJagaDalam;
-
             renderSchedule();
         }
-
 
         function renderSchedule() {
             const dutyDateInput = document.getElementById('dutyDate').value;
@@ -557,13 +592,12 @@ Untuk pj setelah keluar kelas langsung ke ruang staff untuk mengambil ban tangan
             document.getElementById('tempatWudhuOutput').innerHTML = `<strong>Tempat Wudhu:</strong><br>${generatedLists.tempatWudhu.join('<br>')}`;
             document.getElementById('tadarusOutput').innerHTML = `<strong>Tadarus:</strong><br>${generatedLists.tadarus.join('<br>')}`;
 
-            // Get names that just served, including the double-duty person
             const newlyServed = [
                 ...generatedLists.jagaDalam.map(name => name.replace(' (PJ)', '').replace(' (Double Duty)', '')), 
                 ...generatedLists.jagaLuar.map(name => name.replace(' (PJ)', '').replace(' (Double Duty)', '')), 
                 ...generatedLists.tempatWudhu.map(name => name.replace(' (PJ)', '').replace(' (Double Duty)', '')), 
                 ...generatedLists.tadarus.map(name => name.replace(' (PJ)', '').replace(' (Double Duty)', ''))
-            ].filter(name => !name.startsWith('('));
+            ].filter(name => !name.startsWith('(') && name !== 'undefined' && name.trim() !== '');
             addNewlyServedNames(newlyServed);
         }
 
